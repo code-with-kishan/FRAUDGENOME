@@ -1,0 +1,493 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MuleGuard CTI Console</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #071019;
+        --panel: rgba(11, 18, 27, 0.94);
+        --panel-2: rgba(16, 26, 38, 0.9);
+        --line: rgba(255, 255, 255, 0.08);
+        --text: #eef4fb;
+        --muted: #89a0b3;
+        --teal: #36d6c3;
+        --amber: #ffbf5d;
+        --rose: #ff6b7c;
+        --blue: #74a9ff;
+        --shadow: 0 30px 80px rgba(0, 0, 0, 0.36);
+        --radius: 22px;
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body { min-height: 100%; }
+
+      body {
+        margin: 0;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(54, 214, 195, 0.14), transparent 30%),
+          radial-gradient(circle at 85% 20%, rgba(116, 169, 255, 0.13), transparent 28%),
+          linear-gradient(180deg, #071019, #09131d);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      button {
+        border: 0;
+        border-radius: 14px;
+        padding: 10px 14px;
+        color: var(--text);
+        background: linear-gradient(135deg, rgba(54, 214, 195, 0.22), rgba(116, 169, 255, 0.18));
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+        cursor: pointer;
+        font: inherit;
+        transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+      }
+
+      button:hover { transform: translateY(-1px); }
+
+      button.secondary { background: rgba(255, 255, 255, 0.05); }
+
+      #app-shell {
+        display: grid;
+        grid-template-columns: 330px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      #sidebar {
+        padding: 22px;
+        border-right: 1px solid var(--line);
+        background: linear-gradient(180deg, rgba(14, 24, 35, 0.98), rgba(8, 14, 21, 0.98));
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      #workspace {
+        padding: 22px;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 16px;
+      }
+
+      #hero,
+      .panel,
+      .sidebar-card {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+
+      #hero {
+        padding: 20px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+      }
+
+      #hero h1 {
+        margin: 0 0 8px;
+        font-size: 1.35rem;
+      }
+
+      #hero p,
+      .muted { color: var(--muted); }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--line);
+        font-size: 0.82rem;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--teal);
+        box-shadow: 0 0 0 5px rgba(54, 214, 195, 0.14);
+      }
+
+      .status-dot.offline {
+        background: var(--rose);
+        box-shadow: 0 0 0 5px rgba(255, 107, 124, 0.14);
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .stat-card {
+        padding: 16px;
+        border-radius: 18px;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+      }
+
+      .stat-card .label {
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.11em;
+        font-size: 0.76rem;
+      }
+
+      .stat-card .value {
+        display: block;
+        margin-top: 6px;
+        font-size: 1.55rem;
+        font-weight: 700;
+      }
+
+      .sidebar-card,
+      .panel {
+        padding: 18px;
+      }
+
+      .panel-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .panel-head h2,
+      .panel-head h3 { margin: 0; }
+
+      .panel-head small { color: var(--muted); }
+
+      #content-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(360px, 1fr);
+        gap: 16px;
+        min-height: 0;
+      }
+
+      #graph-shell,
+      #waterfall-shell {
+        position: relative;
+        overflow: hidden;
+        border-radius: 18px;
+        min-height: 0;
+        background:
+          radial-gradient(circle at top right, rgba(255, 191, 93, 0.08), transparent 26%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+        border: 1px solid var(--line);
+      }
+
+      #graph-shell { height: 520px; }
+      #waterfall-shell { min-height: 320px; }
+
+      svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+
+      .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      .swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 999px;
+      }
+
+      #accounts {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-height: 48vh;
+        overflow: auto;
+        padding-right: 2px;
+      }
+
+      .account {
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        padding: 12px;
+        cursor: pointer;
+        transition: transform 0.14s ease, background 0.14s ease, border-color 0.14s ease;
+      }
+
+      .account:hover,
+      .account.selected {
+        transform: translateY(-1px);
+        border-color: rgba(54, 214, 195, 0.38);
+        background: rgba(54, 214, 195, 0.08);
+      }
+
+      .account-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .account-id { font-weight: 700; }
+
+      .account-meta {
+        margin-top: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .risk-bar {
+        margin-top: 10px;
+        height: 8px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.07);
+      }
+
+      .risk-bar span { display: block; height: 100%; border-radius: inherit; }
+
+      .account-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .account-actions button {
+        flex: 1;
+        padding: 8px 10px;
+        font-size: 0.84rem;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .detail-card {
+        padding: 12px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .detail-card .label {
+        color: var(--muted);
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.11em;
+      }
+
+      .detail-card .value {
+        margin-top: 6px;
+        font-size: 1.02rem;
+        font-weight: 700;
+      }
+
+      .narrative {
+        display: grid;
+        gap: 8px;
+      }
+
+      .narrative-item {
+        padding: 10px 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+        line-height: 1.45;
+      }
+
+      #graph-tooltip {
+        position: absolute;
+        pointer-events: none;
+        opacity: 0;
+        transform: translate(-50%, calc(-100% - 12px));
+        background: rgba(5, 10, 15, 0.96);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        padding: 8px 10px;
+        box-shadow: var(--shadow);
+        font-size: 0.8rem;
+        max-width: 240px;
+      }
+
+      .empty-state {
+        padding: 12px 0 0;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .link-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+
+      @media (max-width: 1180px) {
+        #app-shell { grid-template-columns: 1fr; }
+        #sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
+        #content-grid { grid-template-columns: 1fr; }
+        #graph-shell { height: 460px; }
+      }
+
+      @media (max-width: 720px) {
+        #workspace, #sidebar { padding: 16px; }
+        #hero { flex-direction: column; align-items: flex-start; }
+        .summary-grid, .detail-grid { grid-template-columns: 1fr; }
+        .hero-actions { justify-content: flex-start; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app-shell">
+      <aside id="sidebar">
+        <div>
+          <div class="pill"><span class="status-dot" id="connection-dot"></span><span id="connection-text">Live feed connected</span></div>
+          <h1 style="margin:14px 0 8px;">MuleGuard CTI Console</h1>
+          <p class="muted" style="margin:0;">Interactive CTI map, SHAP waterfall, and ring evidence in one working surface.</p>
+        </div>
+
+        <div class="summary-grid">
+          <div class="stat-card"><span class="label">Accounts</span><span class="value" id="account-count">0</span></div>
+          <div class="stat-card"><span class="label">High risk</span><span class="value" id="high-risk-count">0</span></div>
+          <div class="stat-card"><span class="label">Communities</span><span class="value" id="community-count">0</span></div>
+          <div class="stat-card"><span class="label">Links</span><span class="value" id="link-count">0</span></div>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="panel-head" style="margin-bottom:12px;">
+            <div>
+              <h3>Accounts</h3>
+              <small>Click a node or list entry to focus the map.</small>
+            </div>
+            <button id="simulate">Add account</button>
+          </div>
+          <div id="accounts"></div>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="panel-head" style="margin-bottom:12px;">
+            <div>
+              <h3>Actions</h3>
+              <small>Generate a brief for the selected account.</small>
+            </div>
+          </div>
+          <div class="account-actions" style="margin-top:0;">
+            <button id="focus-selected">Focus selected</button>
+            <button id="generate-selected" class="secondary">Generate brief</button>
+          </div>
+          <div class="empty-state">The selection stays subscribed to live CTI updates while the graph and waterfall refresh from the current evidence set.</div>
+        </div>
+      </aside>
+
+      <main id="workspace">
+        <header id="hero">
+          <div>
+            <div class="pill" style="margin-bottom:12px;">CTI map <span class="link-chip" id="selected-account-chip">No account selected</span></div>
+            <h1>Fraud investigation dashboard</h1>
+            <p>Force-directed CTI map on the left, SHAP waterfall and ring evidence on the right. Click nodes, edges, or accounts to inspect the local neighborhood.</p>
+          </div>
+          <div class="hero-actions">
+            <span class="pill">Model status: <strong id="model-status">checking</strong></span>
+            <span class="pill">Backend: <strong id="backend-status">unknown</strong></span>
+          </div>
+        </header>
+
+        <div id="content-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Interactive CTI map</h2>
+                <small>Node size follows CTI, edge width follows relationship strength.</small>
+              </div>
+              <div class="legend">
+                <span class="legend-item"><span class="swatch" style="background: var(--rose);"></span>High CTI</span>
+                <span class="legend-item"><span class="swatch" style="background: var(--teal);"></span>Lower CTI</span>
+                <span class="legend-item"><span class="swatch" style="background: rgba(255,255,255,0.45);"></span>Connection</span>
+              </div>
+            </div>
+            <div id="graph-shell">
+              <svg id="graph-svg" aria-label="CTI network graph"></svg>
+              <div id="graph-tooltip"></div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Selected evidence</h2>
+                <small>SHAP waterfall, account summary, and relationship context.</small>
+              </div>
+            </div>
+
+            <div style="display:grid; gap:12px;">
+              <div id="account-summary" class="detail-grid"></div>
+
+              <div class="sidebar-card" style="padding:16px; background: rgba(255,255,255,0.03); box-shadow:none;">
+                <div class="panel-head" style="margin-bottom:12px;">
+                  <div>
+                    <h3>SHAP waterfall</h3>
+                    <small>Positive values push CTI up, negative values pull it down.</small>
+                  </div>
+                </div>
+                <div id="waterfall-shell">
+                  <svg id="waterfall-svg" aria-label="SHAP waterfall chart"></svg>
+                </div>
+                <div id="plain-english" class="narrative" style="margin-top:12px;"></div>
+              </div>
+
+              <div class="sidebar-card" style="padding:16px; background: rgba(255,255,255,0.03); box-shadow:none;">
+                <div class="panel-head" style="margin-bottom:12px;">
+                  <div>
+                    <h3>Relationship detail</h3>
+                    <small>Click a graph edge to inspect the connection.</small>
+                  </div>
+                </div>
+                <div id="relationship-summary" class="detail-grid"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
