@@ -40,7 +40,7 @@ def generate_pdf_from_payload(payload: Dict[str, Any], out_path: str) -> str:
     styles = getSampleStyleSheet()
     story = []
 
-    title = f"MuleGuard Brief — Account {payload.get('account_id')}"
+    title = f"FRAUDGENOME Brief — Account {payload.get('account_id')}"
     story.append(Paragraph(title, styles['Title']))
     story.append(Spacer(1, 12))
 
@@ -115,7 +115,7 @@ def build_claude_prompt_from_payload(payload: Dict[str, Any]) -> str:
     the deployment layer where secure keys are stored.
     """
     prompt = [
-        "You are MuleGuard AI assistant. Produce a concise forensic brief for investigators.",
+        "You are the FRAUDGENOME assistant. Produce a concise forensic brief for investigators.",
         "Include: one-paragraph summary, top 5 SHAP drivers (with exact values), top 5 DTW matches (account, distance), ring summary, and recommended next actions.",
         "Output JSON with keys: short_summary, top_shap (list), top_matches (list), ring_summary, recommended_actions, citations.",
         "Payload:",

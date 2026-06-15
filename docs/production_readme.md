@@ -1,11 +1,11 @@
 # Production Runbook (Prototype → Production)
 
-This file contains pragmatic steps to deploy the MuleGuard AI prototype to a production-like environment.
+This file contains pragmatic steps to deploy the FRAUDGENOME prototype to a production-like environment.
 
 1. Build container
 
 ```bash
-docker build -t muleguard:latest .
+docker build -t fraudgenome:latest .
 ```
 
 2. Provide models
@@ -19,7 +19,7 @@ Place trained models in `models/` in repo root with filenames expected by the AP
 3. Run container
 
 ```bash
-docker run --rm -p 8000:8000 -e MULEGUARD_LOG_LEVEL=INFO muleguard:latest
+docker run --rm -p 8000:8000 -e FRAUDGENOME_LOG_LEVEL=INFO fraudgenome:latest
 ```
 
 4. Health checks

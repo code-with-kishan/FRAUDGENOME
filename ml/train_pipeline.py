@@ -93,7 +93,7 @@ def train(args):
         top_features = select_topk_shap(init_clf, X_train, k=topk)
     except Exception:
         # fallback to feature importances
-        imp = lgb_clf.feature_importances_
+        imp = getattr(init_clf, 'feature_importances_', np.zeros(X_train.shape[1], dtype=float))
         idxs = np.argsort(-imp)[:topk]
         top_features = [X_train.columns[i] for i in idxs]
 

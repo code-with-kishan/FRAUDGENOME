@@ -15,6 +15,13 @@ const communityCountEl = document.getElementById('community-count');
 const linkCountEl = document.getElementById('link-count');
 const accountSummaryEl = document.getElementById('account-summary');
 const relationshipSummaryEl = document.getElementById('relationship-summary');
+const investigationSummaryEl = document.getElementById('investigation-summary');
+const signatureMatchListEl = document.getElementById('signature-match-list');
+const notesListEl = document.getElementById('notes-list');
+const investigatorNoteInput = document.getElementById('investigator-note-input');
+const investigatorNameInput = document.getElementById('investigator-name-input');
+const investigatorStatusInput = document.getElementById('investigator-status-input');
+const saveNoteBtn = document.getElementById('save-note');
 const plainEnglishEl = document.getElementById('plain-english');
 const graphShell = document.getElementById('graph-shell');
 const graphTooltip = document.getElementById('graph-tooltip');
@@ -40,6 +47,7 @@ const state = {
   shapCache: new Map(),
   ringCache: new Map(),
   currentRingSummary: null,
+  currentInvestigation: null,
   simulation: null,
   backendHealthy: null,
   pendingSubscription: null,
@@ -74,10 +82,10 @@ function riskBandForCti(cti) {
 }
 
 function accountRiskColor(cti) {
-  if (cti >= 80) return '#ff6b7c';
-  if (cti >= 55) return '#ffbf5d';
-  if (cti >= 30) return '#74a9ff';
-  return '#36d6c3';
+  if (cti >= 80) return '#ff453a';
+  if (cti >= 55) return '#ff9f0a';
+  if (cti >= 30) return '#0a84ff';
+  return '#30d158';
 }
 
 function getSelectedAccount() {
@@ -251,6 +259,8 @@ function generateBrief(accountId) {
       include_dtw: true,
       include_ring: true,
       notes: account ? `Focused on ${account.account_id} from community ${account.community}` : 'Demo brief',
+      features: account ? account.featureValues : undefined,
+      timeseries: account ? account.timeseries : undefined,
     }),
   })
     .then((response) => {
@@ -292,7 +302,7 @@ function renderAccounts() {
               <span class="link-chip">${account.riskBand}</span>
             </div>
           </div>
-          <span class="pill" style="padding:6px 10px; background:${accountRiskColor(account.cti)}22; border-color:${accountRiskColor(account.cti)}44;">CTI ${formatDecimal(account.cti)}</span>
+          <span class="pill" style="padding:6px 10px; background:${accountRiskColor(account.cti)}22; border-color:${accountRiskColor(account.cti)}44;">Risk ${formatDecimal(account.cti)}</span>
         </div>
         <div class="risk-bar"><span style="width:${Math.max(8, Math.min(account.cti, 100))}%; background:${accountRiskColor(account.cti)};"></span></div>
         <div class="account-actions">
@@ -323,7 +333,7 @@ function updateSummaryCards() {
 
 function updateSelectionChip() {
   const account = getSelectedAccount();
-  selectedAccountChip.textContent = account ? `${account.account_id} · CTI ${formatDecimal(account.cti)}` : 'No account selected';
+  selectedAccountChip.textContent = account ? `${account.account_id} · Risk ${formatDecimal(account.cti)}` : 'No account selected';
 }
 
 function renderAccountSummary() {
@@ -331,7 +341,7 @@ function renderAccountSummary() {
   if (!account) {
     accountSummaryEl.innerHTML = `
       <div class="detail-card"><div class="label">Status</div><div class="value">Choose a node</div></div>
-      <div class="detail-card"><div class="label">CTI</div><div class="value">--</div></div>
+      <div class="detail-card"><div class="label">Risk score</div><div class="value">--</div></div>
       <div class="detail-card"><div class="label">Community</div><div class="value">--</div></div>
       <div class="detail-card"><div class="label">Risk band</div><div class="value">--</div></div>
       <div class="detail-card"><div class="label">Volume</div><div class="value">--</div></div>
@@ -344,7 +354,7 @@ function renderAccountSummary() {
 
   accountSummaryEl.innerHTML = `
     <div class="detail-card"><div class="label">Selected account</div><div class="value">${account.account_id}</div></div>
-    <div class="detail-card"><div class="label">CTI</div><div class="value">${formatDecimal(account.cti)}</div></div>
+    <div class="detail-card"><div class="label">Risk score</div><div class="value">${formatDecimal(account.cti)}</div></div>
     <div class="detail-card"><div class="label">Community</div><div class="value">${account.community}</div></div>
     <div class="detail-card"><div class="label">Risk band</div><div class="value">${account.riskBand}</div></div>
     <div class="detail-card"><div class="label">Volume</div><div class="value">${account.volume.toLocaleString()}</div></div>
@@ -445,6 +455,54 @@ function fetchRingSummary(account) {
       state.ringCache.set(cacheKey, fallback);
       console.warn('using local ring fallback', error);
       return fallback;
+    });
+}
+
+function fetchInvestigationSummary(account) {
+  return fetch('/accounts/investigate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      account_id: account.account_id,
+      features: account.featureValues,
+      timeseries: account.timeseries,
+    }),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`investigation endpoint returned ${response.status}`);
+      }
+      return response.json();
+    })
+    .catch((error) => {
+      console.warn('using local investigation fallback', error);
+      const ring = buildLocalRingSummary(account);
+      const contagionScore = Number(((ring.stage_score || 0.35) * 100).toFixed(1));
+      return {
+        account_id: account.account_id,
+        risk_score: account.cti,
+        risk_level: account.riskBand,
+        risk_breakdown: {
+          ml_probability: Number((account.cti * 0.72).toFixed(1)),
+          anomaly_score: Number((Math.min(100, account.velocity * 18)).toFixed(1)),
+          signature_score: Number((Math.min(100, account.cti * 0.82)).toFixed(1)),
+          contagion_score: contagionScore,
+        },
+        signature_matches: [
+          {
+            pattern_id: `SIG-${String(account.community).padStart(3, '0')}`,
+            distance: Number((Math.max(0.08, 1 - account.cti / 100)).toFixed(3)),
+            score: Number((account.cti / 100).toFixed(3)),
+          },
+        ],
+        ring_summary: ring,
+        recommendation: account.cti >= 80
+          ? 'Escalate immediately and place enhanced monitoring on the linked account set.'
+          : account.cti >= 55
+            ? 'Queue for same-day fraud review with signature and community evidence.'
+            : 'Continue monitoring and collect additional evidence.',
+        notes: [],
+      };
     });
 }
 
@@ -607,6 +665,55 @@ function renderRelationshipSummary() {
   `;
 }
 
+function renderInvestigationSummary() {
+  const account = getSelectedAccount();
+  const investigation = state.currentInvestigation;
+
+  if (!account || !investigation) {
+    investigationSummaryEl.innerHTML = `
+      <div class="detail-card"><div class="label">Recommendation</div><div class="value">Select an account</div></div>
+      <div class="detail-card"><div class="label">Risk level</div><div class="value">--</div></div>
+      <div class="detail-card"><div class="label">Anomaly</div><div class="value">--</div></div>
+      <div class="detail-card"><div class="label">Contagion</div><div class="value">--</div></div>
+    `;
+    signatureMatchListEl.innerHTML = '<div class="empty-state">Signature evidence will appear after an account is selected.</div>';
+    notesListEl.innerHTML = '<div class="empty-state">Saved notes for the selected case will appear here.</div>';
+    return;
+  }
+
+  const breakdown = investigation.risk_breakdown || {};
+  investigationSummaryEl.innerHTML = `
+    <div class="detail-card"><div class="label">Recommendation</div><div class="value">${investigation.recommendation || 'Monitor'}</div></div>
+    <div class="detail-card"><div class="label">Risk level</div><div class="value">${investigation.risk_level || account.riskBand}</div></div>
+    <div class="detail-card"><div class="label">Anomaly</div><div class="value">${formatDecimal(breakdown.anomaly_score || 0)}</div></div>
+    <div class="detail-card"><div class="label">Contagion</div><div class="value">${formatDecimal(breakdown.contagion_score || 0)}</div></div>
+  `;
+
+  const matches = investigation.signature_matches || [];
+  if (matches.length === 0) {
+    signatureMatchListEl.innerHTML = '<div class="empty-state">No signature matches returned for this account.</div>';
+  } else {
+    signatureMatchListEl.innerHTML = matches.slice(0, 3).map((match) => `
+      <div class="narrative-item">
+        <strong>${match.pattern_id || 'Signature'}</strong><br />
+        score ${formatDecimal((match.score || 0) * 100)} · distance ${Number(match.distance || 0).toFixed(3)}
+      </div>
+    `).join('');
+  }
+
+  const notes = investigation.notes || [];
+  if (notes.length === 0) {
+    notesListEl.innerHTML = '<div class="empty-state">No investigator notes saved yet.</div>';
+    return;
+  }
+  notesListEl.innerHTML = notes.slice().reverse().map((entry) => `
+    <div class="narrative-item">
+      <strong>${entry.analyst || 'Investigator'}</strong> · ${entry.status || 'Open'}<br />
+      ${entry.note}
+    </div>
+  `).join('');
+}
+
 function isConnected(accountId) {
   if (!state.hoveredNodeId) {
     return true;
@@ -649,8 +756,8 @@ function updateGraphStyles(linkSelection, nodeSelection, labelSelection) {
       return link.id === state.selectedLinkId ? 1 : 0.7;
     })
     .attr('stroke', (link) => {
-      if (link.id === state.selectedLinkId) return '#ffbf5d';
-      if (link.id === state.hoveredLinkId) return '#74a9ff';
+      if (link.id === state.selectedLinkId) return '#ff9f0a';
+      if (link.id === state.hoveredLinkId) return '#0a84ff';
       return 'rgba(255,255,255,0.28)';
     });
 }
@@ -719,7 +826,7 @@ function renderGraph() {
       graphTooltip.style.opacity = '1';
       graphTooltip.innerHTML = `
         <strong>${node.account_id}</strong><br />
-        CTI ${node.cti.toFixed(1)} · community ${node.community} · ${node.riskBand}
+        Risk ${node.cti.toFixed(1)} · community ${node.community} · ${node.riskBand}
       `;
       updateGraphStyles(linkSelection, nodeSelection, labelSelection);
     })
@@ -820,9 +927,11 @@ function refreshSelectedEvidence() {
   const account = getSelectedAccount();
   if (!account) {
     state.currentRingSummary = null;
+    state.currentInvestigation = null;
     renderPlainEnglish([]);
     renderWaterfall({}, null);
     renderRelationshipSummary();
+    renderInvestigationSummary();
     return Promise.resolve();
   }
 
@@ -832,15 +941,18 @@ function refreshSelectedEvidence() {
   return Promise.all([
     fetchShap(account),
     fetchRingSummary(account),
-  ]).then(([shapPayload, ringPayload]) => {
+    fetchInvestigationSummary(account),
+  ]).then(([shapPayload, ringPayload, investigationPayload]) => {
     if (state.selectedAccountId !== requestAccountId) {
       return;
     }
 
     state.currentRingSummary = ringPayload;
+    state.currentInvestigation = investigationPayload;
     renderPlainEnglish(shapPayload.plain_english || []);
     renderWaterfall(shapPayload.shap || {}, account);
     renderRelationshipSummary();
+    renderInvestigationSummary();
   });
 }
 
@@ -938,6 +1050,45 @@ generateSelectedBtn.addEventListener('click', () => {
   if (account) {
     generateBrief(account.account_id);
   }
+});
+
+saveNoteBtn.addEventListener('click', () => {
+  const account = getSelectedAccount();
+  if (!account) return;
+  const noteText = investigatorNoteInput.value.trim();
+  const analyst = investigatorNameInput.value.trim();
+  const status = investigatorStatusInput.value;
+  if (!noteText) {
+    alert('Please enter a note.');
+    return;
+  }
+
+  fetch(`/accounts/${account.account_id}/notes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      note: noteText,
+      analyst: analyst || undefined,
+      status: status || undefined,
+    }),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error('Failed to save note');
+      }
+      return response.json();
+    })
+    .then((data) => {
+      investigatorNoteInput.value = '';
+      if (state.currentInvestigation && state.currentInvestigation.account_id === account.account_id) {
+        state.currentInvestigation.notes = data.notes;
+        renderInvestigationSummary();
+      }
+    })
+    .catch((error) => {
+      console.error(error);
+      alert('Error saving note');
+    });
 });
 
 window.addEventListener('resize', () => {

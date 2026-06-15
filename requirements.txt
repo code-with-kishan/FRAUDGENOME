@@ -14,8 +14,9 @@ imbalanced-learn
 reportlab
 mlflow
 river
-androguard
 pytest
 httpx
 networkx
 python-louvain
+python-dotenv
+openpyxl

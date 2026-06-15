@@ -1,6 +1,6 @@
-# MuleGuard AI + ShieldScan
+# FRAUDGENOME
 
-Enterprise-grade fraud intelligence platform scaffold.
+AI-powered fraud intelligence platform for real-time mule account detection.
 
 Contents:
 - `ml/` — prototype training and DTW utilities
@@ -25,13 +25,13 @@ pip install -r requirements.txt
 python ml/train.py --data 'DataSet.csv' --out models/
 ```
 
-3. Start API server (serves CTI stub):
+3. Start API server:
 
 ```bash
 uvicorn api.app:app --reload --port 8000
 ```
 
-This scaffold provides a runnable prototype and place to expand into the full MuleGuard AI + ShieldScan platform.
+This scaffold provides a runnable prototype for the FRAUDGENOME MVP: ingestion, feature engineering, ensemble scoring, explainability, FraudDNA signatures, risk scoring, and an investigator dashboard.
 
 Additional utilities:
 - Cohort scoring and evaluation: `python -m ml.cohort_scoring --normalized data/processed/normalized.parquet --labels data/processed/labels.parquet --cohorts data/processed/cohorts.parquet --models models/ --selected models/selected_features.json --out models/`
@@ -45,7 +45,7 @@ Real-time demo (local):
 uvicorn api.app:app --reload
 ```
 
-- Open http://localhost:8000/ in a browser to see the D3 force demo. Click an account to subscribe to simulated CTI updates and use "Generate Brief" to download a PDF draft.
+- Open http://localhost:8000/ in a browser to explore the investigator dashboard. Click an account to subscribe to simulated risk updates and use "Generate Brief" to download a PDF draft.
 
 Security & Compliance:
 
@@ -76,17 +76,18 @@ python -m ml.cohort_scoring --normalized data/processed/normalized.parquet --lab
 curl -X POST http://localhost:8000/models/drift_check -H "Content-Type: application/json" -d '{"model_path":"models/lgb_model.joblib","normalized":"data/processed/normalized.parquet","labels":"data/processed/labels.parquet","retrain_cmd":["python3","-m","ml.train_pipeline"]}'
 ```
 
-- ShieldScan (APK analysis + correlation):
+- Dashboard summary and signature library:
 
 ```bash
-curl -X POST http://localhost:8000/shieldscan/analyze -H "Content-Type: application/json" -d '{"apk_path":"samples/apks/suspicious.apk","frauddna_manifest":"models/frauddna_manifest.parquet","accounts_events":"data/processed/accounts_events.parquet","dynamic_trace":"samples/traces/suspicious_trace.json"}'
+curl http://localhost:8000/dashboard/summary
+curl http://localhost:8000/signatures/library
 ```
 
 - GenAI brief drafts (server-side PDF): use the demo UI or call `/briefs/generate` with `account_id` and available evidence. The `ml/briefs.py` module prepares a Claude prompt if you want to call an LLM from a secure deployment layer.
 
 - Security & audit:
-	- Set `MULEGUARD_API_KEYS` to a comma-separated list of API keys to require `X-API-Key` for API access.
-	- Audit log file location: `MULEGUARD_AUDIT_LOG` (defaults to `models/audit.log`).
+	- Set `FRAUDGENOME_API_KEYS` or legacy `MULEGUARD_API_KEYS` to a comma-separated list of API keys to require `X-API-Key` for API access.
+	- Audit log file location: `FRAUDGENOME_AUDIT_LOG` or legacy `MULEGUARD_AUDIT_LOG` (defaults to `models/audit.log`).
 
 - Tests and CI:
 	- Unit tests are in `tests/`. Run them locally with:
@@ -100,4 +101,4 @@ If CI is enabled, tests will run automatically on PRs.
 
 Support & next steps
 ---------------------
-- If you'd like, I can wire secure Claude integration (server-side) for final brief polishing, add an emulator runner for ShieldScan dynamic analysis, or harden the demo for production (JWT, RBAC, signed brief URLs). Open which option you prefer and I'll implement it.
+- If you'd like, the next strong upgrades would be persistent PostgreSQL storage, Redis-backed real-time scoring, JWT/RBAC, and a richer investigator case workflow.

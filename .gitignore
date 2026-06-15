@@ -9,3 +9,5 @@ venv/
 DataSet.csv
 .DS_Store
 .pytest_cache/
+venv311/
+.env

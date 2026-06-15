@@ -1,4 +1,4 @@
-Data processed layout for MuleGuard AI prototype
+Data processed layout for FRAUDGENOME AI prototype
 
 - `raw.parquet` — ingested raw table from `DataSet.csv`.
 - `normalized.parquet` — cleaned and normalized table used for window extraction.

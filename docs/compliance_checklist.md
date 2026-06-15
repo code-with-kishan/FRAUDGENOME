@@ -1,9 +1,9 @@
-# MuleGuard Compliance Checklist
+# FRAUDGENOME Compliance Checklist
 
 This checklist summarizes security and compliance items for the prototype.
 
 - [ ] Secrets: No secrets committed to repository. Use env vars for keys and tokens.
-- [ ] API Auth: `X-API-Key` header enforced when `MULEGUARD_API_KEYS` is set.
+- [ ] API Auth: `X-API-Key` header enforced when `FRAUDGENOME_API_KEYS` is set.
 - [ ] Audit Logging: Requests and outcomes are written to `models/audit.log` (JSONL).
 - [ ] Data Access: Models, artifacts, and PII datasets are stored under `models/` and `data/` with restricted permissions.
 - [ ] FMR: Failure Mode & Remediation template exists at `docs/FMR.md`.

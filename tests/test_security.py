@@ -8,7 +8,7 @@ import api.app as appmod
 def test_health_and_audit_log(tmp_path, monkeypatch):
     # set audit log to tmp file
     audit_file = tmp_path / 'audit.log'
-    monkeypatch.setenv('MULEGUARD_AUDIT_LOG', str(audit_file))
+    monkeypatch.setenv('FRAUDGENOME_AUDIT_LOG', str(audit_file))
     client = TestClient(appmod.app)
     r = client.get('/health')
     assert r.status_code == 200
@@ -22,7 +22,7 @@ def test_health_and_audit_log(tmp_path, monkeypatch):
 
 def test_api_key_enforced(tmp_path, monkeypatch):
     # require a key
-    monkeypatch.setenv('MULEGUARD_API_KEYS', 'testkey123')
+    monkeypatch.setenv('FRAUDGENOME_API_KEYS', 'testkey123')
     client = TestClient(appmod.app)
     r = client.get('/health')
     # missing key -> 401

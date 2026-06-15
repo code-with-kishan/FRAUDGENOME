@@ -1,6 +1,6 @@
-# MuleGuard AI — Success Criteria, Metrics, and 90s Demo Script
+# FRAUDGENOME — Success Criteria, Metrics, and 90s Demo Script
 
-This document records objective acceptance criteria, key metrics, and the 90-second demo steps required to call the project a "10/10" implementation of MuleGuard AI v5.
+This document records objective acceptance criteria, key metrics, and the 90-second demo steps required to call the project a "10/10" implementation of FRAUDGENOME.
 
 ## High-level success criteria
 - Detect pre-fraud mule recruitment (early-warning) and map fraud rings with lifecycle staging.
@@ -38,7 +38,7 @@ This document records objective acceptance criteria, key metrics, and the 90-sec
 2. Click a flagged account (3–5s): show account panel with CTI=91, DTW match (Pattern #3, distance 0.23), and SHAP waterfall (top-3 reasons). Narration: "This account matches Fraud DNA Pattern #3 and scored 91 due to dormancy reactivation and velocity spike." 
 3. Trigger ring map (5s): Node cluster animates; highlight Ring #7 (11 nodes) and show lifecycle stage: Recruiting. Narration: "Ring #7 is in Recruiting—no fraudulent transfers observed yet." 
 4. Click "Generate Brief" (20s): PDF pops up with structured investigation brief, top-5 SHAP inputs, DTW evidence, recommended action, and FMR draft. Narration: "Here is a fully-sourced brief ready for compliance review." 
-5. Switch to ShieldScan (15s): upload APK; show risk score 88 and correlated accounts (12 accounts in same region with Fraud DNA activation within 48 hours). Narration: "The APK distribution correlates with recent mule activations—this connects PS1 and PS2." 
+5. Open the signature library (15s): show confirmed mule patterns, coverage, and active prototype windows. Narration: "These stored FraudDNA patterns become reusable memory for future investigations." 
 
 Timing note: run the demo locally with canned data for reproducibility; all times measured on a modern developer laptop and may vary in production.
 
@@ -46,6 +46,3 @@ Timing note: run the demo locally with canned data for reproducibility; all time
 1. Reproduce target metrics on a held-out labeled dataset (PR-AUC, AUC-ROC). 
 2. End-to-end pipeline test: data ingestion → Fraud DNA extraction → model training → API scoring → brief generation.
 3. Compliance audit checklist: brief contains only verifiable sources, with analyst sign-off flow.
-
----
-If you want, I will now: (A) implement the Fraud DNA extractor (Step 3), or (B) write the data ingestion and windowing code (Step 2). Pick one and I'll start. 

@@ -2,10 +2,24 @@ import os
 import joblib
 import numpy as np
 import pandas as pd
-import shap
+
+try:
+    import shap
+    _SHAP_AVAILABLE = True
+except ImportError:
+    shap = None
+    _SHAP_AVAILABLE = False
+
+
+def shap_available() -> bool:
+    """Check whether SHAP library is installed and usable."""
+    return _SHAP_AVAILABLE
+
 
 def save_shap_sample(model, X_sample: pd.DataFrame, out_path: str):
     """Compute and save SHAP explainer and sample values for later API use."""
+    if not _SHAP_AVAILABLE:
+        raise RuntimeError('shap is not installed — install it with: pip install shap (requires Python <3.14)')
     explainer = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(X_sample)
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
@@ -14,6 +28,8 @@ def save_shap_sample(model, X_sample: pd.DataFrame, out_path: str):
 
 
 def compute_shap_for_row(model, X_row: pd.DataFrame):
+    if not _SHAP_AVAILABLE:
+        raise RuntimeError('shap is not installed — install it with: pip install shap (requires Python <3.14)')
     explainer = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(X_row)
     # return feature names, shap values for class 1 if binary

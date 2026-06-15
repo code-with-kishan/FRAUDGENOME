@@ -1,128 +1,264 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MuleGuard CTI Console</title>
+    <title>FRAUDGENOME Risk Console</title>
+    <!-- Modern Typography: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
       :root {
         color-scheme: dark;
-        --bg: #071019;
-        --panel: rgba(11, 18, 27, 0.94);
-        --panel-2: rgba(16, 26, 38, 0.9);
+        --bg: #000000;
+        --panel: rgba(10, 10, 12, 0.72);
+        --panel-2: rgba(20, 20, 25, 0.45);
         --line: rgba(255, 255, 255, 0.08);
-        --text: #eef4fb;
-        --muted: #89a0b3;
-        --teal: #36d6c3;
-        --amber: #ffbf5d;
-        --rose: #ff6b7c;
-        --blue: #74a9ff;
-        --shadow: 0 30px 80px rgba(0, 0, 0, 0.36);
-        --radius: 22px;
+        --text: #F5F5F7;
+        --muted: #86868B;
+        --teal: #30d158; /* Apple System Green */
+        --amber: #ff9f0a; /* Apple System Orange */
+        --rose: #ff453a; /* Apple System Red */
+        --blue: #0a84ff; /* Apple System Blue */
+        --shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+        --radius: 18px;
+        --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --font-display: "Outfit", var(--font);
       }
 
-      * { box-sizing: border-box; }
+      * { 
+        box-sizing: border-box; 
+        margin: 0; 
+        padding: 0;
+      }
 
-      html, body { min-height: 100%; }
+      /* Apple custom scrollbars */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+      }
+      
+      @supports not (scrollbar-color: auto) {
+        ::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.15);
+          border-radius: 999px;
+        }
+        ::-webkit-scrollbar-track {
+          background: transparent;
+        }
+      }
 
-      body {
-        margin: 0;
+      html, body { 
+        min-height: 100%; 
+        background-color: var(--bg);
         color: var(--text);
-        background:
-          radial-gradient(circle at top left, rgba(54, 214, 195, 0.14), transparent 30%),
-          radial-gradient(circle at 85% 20%, rgba(116, 169, 255, 0.13), transparent 28%),
-          linear-gradient(180deg, #071019, #09131d);
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-family: var(--font);
+        overflow-x: hidden;
       }
 
+      /* Slow flowing background glows */
+      .bg-glows {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        z-index: -10;
+        overflow: hidden;
+        pointer-events: none;
+        background: #000;
+      }
+      .glow-1 {
+        position: absolute;
+        top: -15%; left: -10%;
+        width: 60vw; height: 60vw;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(10, 132, 255, 0.15), transparent 70%);
+        animation: float 25s infinite alternate ease-in-out;
+      }
+      .glow-2 {
+        position: absolute;
+        bottom: -15%; right: -10%;
+        width: 70vw; height: 70vw;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(48, 209, 88, 0.08), transparent 70%);
+        animation: float-reverse 30s infinite alternate ease-in-out;
+      }
+      .glow-3 {
+        position: absolute;
+        top: 25%; right: 15%;
+        width: 45vw; height: 45vw;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 69, 58, 0.06), transparent 70%);
+        animation: float 20s infinite alternate ease-in-out;
+      }
+
+      @keyframes float {
+        0% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(4%, 3%) scale(1.05); }
+        100% { transform: translate(0, 0) scale(1); }
+      }
+      @keyframes float-reverse {
+        0% { transform: translate(0, 0) scale(1.05); }
+        50% { transform: translate(-3%, -4%) scale(1); }
+        100% { transform: translate(0, 0) scale(1.05); }
+      }
+
+      /* Base Typo */
+      h1, h2, h3, h4, .stat-card .value {
+        font-family: var(--font-display);
+        letter-spacing: -0.02em;
+      }
+
+      /* Apple Premium Buttons */
       button {
-        border: 0;
-        border-radius: 14px;
-        padding: 10px 14px;
-        color: var(--text);
-        background: linear-gradient(135deg, rgba(54, 214, 195, 0.22), rgba(116, 169, 255, 0.18));
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 980px; /* Pill */
+        padding: 8px 16px;
+        color: #fff;
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         cursor: pointer;
-        font: inherit;
-        transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+        font-family: var(--font);
+        font-weight: 500;
+        font-size: 0.85rem;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       }
 
-      button:hover { transform: translateY(-1px); }
+      button:hover {
+        background: rgba(255, 255, 255, 0.16);
+        border-color: rgba(255, 255, 255, 0.25);
+        transform: scale(1.02);
+      }
 
-      button.secondary { background: rgba(255, 255, 255, 0.05); }
+      button:active {
+        transform: scale(0.98);
+      }
 
+      button.secondary {
+        background: transparent;
+        border-color: rgba(255, 255, 255, 0.1);
+        color: var(--muted);
+      }
+
+      button.secondary:hover {
+        background: rgba(255, 255, 255, 0.04);
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+
+      textarea,
+      select {
+        width: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 16px;
+        padding: 12px 14px;
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.05);
+        font-family: var(--font);
+        font-size: 0.9rem;
+        resize: vertical;
+      }
+
+      textarea::placeholder {
+        color: var(--muted);
+      }
+
+      /* Shell layout */
       #app-shell {
         display: grid;
-        grid-template-columns: 330px minmax(0, 1fr);
+        grid-template-columns: 350px minmax(0, 1fr);
         min-height: 100vh;
+        background: transparent;
       }
 
+      /* Sidebar styling */
       #sidebar {
-        padding: 22px;
+        padding: 24px;
         border-right: 1px solid var(--line);
-        background: linear-gradient(180deg, rgba(14, 24, 35, 0.98), rgba(8, 14, 21, 0.98));
+        background: rgba(5, 5, 5, 0.6);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 20px;
       }
 
       #workspace {
-        padding: 22px;
+        padding: 24px;
         display: grid;
         grid-template-rows: auto minmax(0, 1fr);
-        gap: 16px;
+        gap: 20px;
+        max-height: 100vh;
+        overflow-y: auto;
       }
 
-      #hero,
+      /* Classy Panels (Glassmorphism) */
       .panel,
-      .sidebar-card {
+      .sidebar-card,
+      #hero {
         border: 1px solid var(--line);
         border-radius: var(--radius);
         background: var(--panel);
+        backdrop-filter: blur(25px) saturate(180%);
+        -webkit-backdrop-filter: blur(25px) saturate(180%);
         box-shadow: var(--shadow);
+        padding: 20px;
       }
 
+      /* Top Header */
       #hero {
-        padding: 20px 24px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 18px;
+        gap: 20px;
       }
 
       #hero h1 {
-        margin: 0 0 8px;
-        font-size: 1.35rem;
+        margin: 0 0 4px;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #fff;
       }
 
       #hero p,
-      .muted { color: var(--muted); }
+      .muted { 
+        color: var(--muted); 
+        font-size: 0.9rem;
+      }
 
       .pill {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 7px 12px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.06);
+        padding: 6px 12px;
+        border-radius: 980px;
+        background: rgba(255, 255, 255, 0.05);
         border: 1px solid var(--line);
-        font-size: 0.82rem;
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: var(--text);
       }
 
       .status-dot {
         width: 8px;
         height: 8px;
-        border-radius: 999px;
+        border-radius: 50%;
         background: var(--teal);
-        box-shadow: 0 0 0 5px rgba(54, 214, 195, 0.14);
+        box-shadow: 0 0 10px var(--teal);
       }
 
       .status-dot.offline {
         background: var(--rose);
-        box-shadow: 0 0 0 5px rgba(255, 107, 124, 0.14);
+        box-shadow: 0 0 10px var(--rose);
       }
 
+      /* Stats layout */
       .summary-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -130,29 +266,32 @@
       }
 
       .stat-card {
-        padding: 16px;
-        border-radius: 18px;
+        padding: 14px;
+        border-radius: 14px;
         background: var(--panel-2);
-        border: 1px solid var(--line);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        transition: transform 0.2s ease, border-color 0.2s ease;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.12);
       }
 
       .stat-card .label {
         color: var(--muted);
         text-transform: uppercase;
-        letter-spacing: 0.11em;
-        font-size: 0.76rem;
+        letter-spacing: 0.08em;
+        font-size: 0.72rem;
+        font-weight: 600;
       }
 
       .stat-card .value {
         display: block;
-        margin-top: 6px;
-        font-size: 1.55rem;
+        margin-top: 4px;
+        font-size: 1.7rem;
         font-weight: 700;
-      }
-
-      .sidebar-card,
-      .panel {
-        padding: 18px;
+        color: #fff;
       }
 
       .panel-head {
@@ -160,34 +299,44 @@
         align-items: flex-start;
         justify-content: space-between;
         gap: 12px;
-        margin-bottom: 14px;
+        margin-bottom: 16px;
       }
 
-      .panel-head h2,
-      .panel-head h3 { margin: 0; }
+      .panel-head h2 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #fff;
+      }
 
-      .panel-head small { color: var(--muted); }
+      .panel-head h3 {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #fff;
+      }
+
+      .panel-head small { 
+        color: var(--muted); 
+        font-size: 0.8rem;
+      }
 
       #content-grid {
         display: grid;
-        grid-template-columns: minmax(0, 1.5fr) minmax(360px, 1fr);
-        gap: 16px;
+        grid-template-columns: minmax(0, 1.4fr) minmax(380px, 1fr);
+        gap: 20px;
         min-height: 0;
       }
 
+      /* Display Shells */
       #graph-shell,
       #waterfall-shell {
         position: relative;
         overflow: hidden;
-        border-radius: 18px;
-        min-height: 0;
-        background:
-          radial-gradient(circle at top right, rgba(255, 191, 93, 0.08), transparent 26%),
-          linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
-        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.01);
+        border: 1px solid rgba(255, 255, 255, 0.05);
       }
 
-      #graph-shell { height: 520px; }
+      #graph-shell { height: 550px; }
       #waterfall-shell { min-height: 320px; }
 
       svg {
@@ -206,81 +355,91 @@
       .legend-item {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         color: var(--muted);
-        font-size: 0.8rem;
+        font-size: 0.78rem;
       }
 
       .swatch {
-        width: 12px;
-        height: 12px;
-        border-radius: 999px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
       }
 
+      /* Account Lists */
       #accounts {
         display: flex;
         flex-direction: column;
         gap: 10px;
-        max-height: 48vh;
-        overflow: auto;
-        padding-right: 2px;
+        max-height: 40vh;
+        overflow-y: auto;
+        padding-right: 4px;
       }
 
       .account {
-        border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.03);
-        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.02);
+        padding: 14px;
         cursor: pointer;
-        transition: transform 0.14s ease, background 0.14s ease, border-color 0.14s ease;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
       }
 
       .account:hover,
       .account.selected {
-        transform: translateY(-1px);
-        border-color: rgba(54, 214, 195, 0.38);
-        background: rgba(54, 214, 195, 0.08);
+        transform: translateY(-2px);
+        border-color: rgba(10, 132, 255, 0.3);
+        background: rgba(10, 132, 255, 0.06);
+        box-shadow: 0 8px 24px rgba(10, 132, 255, 0.08);
       }
 
       .account-top {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-between;
         gap: 12px;
       }
 
-      .account-id { font-weight: 700; }
+      .account-id { 
+        font-weight: 600; 
+        color: #fff;
+        font-size: 0.95rem;
+      }
 
       .account-meta {
         margin-top: 6px;
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 6px;
         align-items: center;
         color: var(--muted);
-        font-size: 0.82rem;
+        font-size: 0.78rem;
       }
 
       .risk-bar {
-        margin-top: 10px;
-        height: 8px;
+        margin-top: 12px;
+        height: 5px;
         border-radius: 999px;
         overflow: hidden;
-        background: rgba(255, 255, 255, 0.07);
+        background: rgba(255, 255, 255, 0.06);
       }
 
-      .risk-bar span { display: block; height: 100%; border-radius: inherit; }
+      .risk-bar span { 
+        display: block; 
+        height: 100%; 
+        border-radius: inherit; 
+      }
 
       .account-actions {
         display: flex;
         gap: 8px;
-        margin-top: 10px;
+        margin-top: 12px;
       }
 
       .account-actions button {
         flex: 1;
-        padding: 8px 10px;
-        font-size: 0.84rem;
+        padding: 6px 12px;
+        font-size: 0.8rem;
       }
 
       .detail-grid {
@@ -291,35 +450,40 @@
 
       .detail-card {
         padding: 12px;
-        border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.04);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        background: rgba(255, 255, 255, 0.02);
       }
 
       .detail-card .label {
         color: var(--muted);
-        font-size: 0.76rem;
+        font-size: 0.72rem;
         text-transform: uppercase;
-        letter-spacing: 0.11em;
+        letter-spacing: 0.08em;
+        font-weight: 600;
       }
 
       .detail-card .value {
-        margin-top: 6px;
-        font-size: 1.02rem;
-        font-weight: 700;
+        margin-top: 4px;
+        font-size: 0.98rem;
+        font-weight: 600;
+        color: #fff;
       }
 
+      /* Narratives */
       .narrative {
         display: grid;
         gap: 8px;
       }
 
       .narrative-item {
-        padding: 10px 12px;
-        border-radius: 14px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.04);
-        line-height: 1.45;
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        background: rgba(255, 255, 255, 0.02);
+        line-height: 1.5;
+        font-size: 0.85rem;
+        color: #E3E3E8;
       }
 
       #graph-tooltip {
@@ -327,47 +491,53 @@
         pointer-events: none;
         opacity: 0;
         transform: translate(-50%, calc(-100% - 12px));
-        background: rgba(5, 10, 15, 0.96);
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(5, 5, 8, 0.95);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 12px;
-        padding: 8px 10px;
-        box-shadow: var(--shadow);
-        font-size: 0.8rem;
-        max-width: 240px;
+        padding: 8px 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        font-size: 0.78rem;
+        max-width: 260px;
+        color: #fff;
+        transition: opacity 0.15s ease;
       }
 
       .empty-state {
-        padding: 12px 0 0;
+        padding: 8px 0 0;
         color: var(--muted);
         line-height: 1.5;
+        font-size: 0.82rem;
       }
 
       .link-chip {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        padding: 7px 10px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.05);
+        gap: 6px;
+        padding: 4px 8px;
+        border-radius: 980px;
+        background: rgba(255, 255, 255, 0.04);
         color: var(--muted);
-        font-size: 0.78rem;
+        font-size: 0.75rem;
       }
 
       .hero-actions {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 8px;
         justify-content: flex-end;
       }
 
-      @media (max-width: 1180px) {
+      /* Responsive rules */
+      @media (max-width: 1200px) {
         #app-shell { grid-template-columns: 1fr; }
         #sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
         #content-grid { grid-template-columns: 1fr; }
         #graph-shell { height: 460px; }
       }
 
-      @media (max-width: 720px) {
+      @media (max-width: 768px) {
         #workspace, #sidebar { padding: 16px; }
         #hero { flex-direction: column; align-items: flex-start; }
         .summary-grid, .detail-grid { grid-template-columns: 1fr; }
@@ -376,12 +546,19 @@
     </style>
   </head>
   <body>
+    <!-- Premium flowing glows -->
+    <div class="bg-glows" aria-hidden="true">
+      <div class="glow-1"></div>
+      <div class="glow-2"></div>
+      <div class="glow-3"></div>
+    </div>
+
     <div id="app-shell">
       <aside id="sidebar">
         <div>
           <div class="pill"><span class="status-dot" id="connection-dot"></span><span id="connection-text">Live feed connected</span></div>
-          <h1 style="margin:14px 0 8px;">MuleGuard CTI Console</h1>
-          <p class="muted" style="margin:0;">Interactive CTI map, SHAP waterfall, and ring evidence in one working surface.</p>
+          <h1 style="margin:14px 0 6px; font-size:1.6rem; font-weight:700;">FRAUDGENOME</h1>
+          <p class="muted" style="margin:0;">Real-time mule-account fraud intelligence surface.</p>
         </div>
 
         <div class="summary-grid">
@@ -395,7 +572,7 @@
           <div class="panel-head" style="margin-bottom:12px;">
             <div>
               <h3>Accounts</h3>
-              <small>Click a node or list entry to focus the map.</small>
+              <small>Click to inspect.</small>
             </div>
             <button id="simulate">Add account</button>
           </div>
@@ -406,27 +583,27 @@
           <div class="panel-head" style="margin-bottom:12px;">
             <div>
               <h3>Actions</h3>
-              <small>Generate a brief for the selected account.</small>
+              <small>Forensic brief drafting.</small>
             </div>
           </div>
           <div class="account-actions" style="margin-top:0;">
             <button id="focus-selected">Focus selected</button>
             <button id="generate-selected" class="secondary">Generate brief</button>
           </div>
-          <div class="empty-state">The selection stays subscribed to live CTI updates while the graph and waterfall refresh from the current evidence set.</div>
+          <div class="empty-state">Selection remains active for dynamic risk monitoring.</div>
         </div>
       </aside>
 
       <main id="workspace">
         <header id="hero">
           <div>
-            <div class="pill" style="margin-bottom:12px;">CTI map <span class="link-chip" id="selected-account-chip">No account selected</span></div>
-            <h1>Fraud investigation dashboard</h1>
-            <p>Force-directed CTI map on the left, SHAP waterfall and ring evidence on the right. Click nodes, edges, or accounts to inspect the local neighborhood.</p>
+            <div class="pill" style="margin-bottom:10px;">RISK MAP <span class="link-chip" id="selected-account-chip">No account selected</span></div>
+            <h1>Fraud Investigation Console</h1>
+            <p>Force-directed relationship engine on the left, SHAP attribution model & structural community indicators on the right.</p>
           </div>
           <div class="hero-actions">
-            <span class="pill">Model status: <strong id="model-status">checking</strong></span>
-            <span class="pill">Backend: <strong id="backend-status">unknown</strong></span>
+            <span class="pill">Model: <strong id="model-status" style="color: #fff;">checking</strong></span>
+            <span class="pill">Backend: <strong id="backend-status" style="color: #fff;">unknown</strong></span>
           </div>
         </header>
 
@@ -434,17 +611,18 @@
           <section class="panel">
             <div class="panel-head">
               <div>
-                <h2>Interactive CTI map</h2>
-                <small>Node size follows CTI, edge width follows relationship strength.</small>
+                <h2>Interactive Risk Map</h2>
+                <small>Size represents composite mule risk. Core edges trace link affinity.</small>
               </div>
               <div class="legend">
-                <span class="legend-item"><span class="swatch" style="background: var(--rose);"></span>High CTI</span>
-                <span class="legend-item"><span class="swatch" style="background: var(--teal);"></span>Lower CTI</span>
-                <span class="legend-item"><span class="swatch" style="background: rgba(255,255,255,0.45);"></span>Connection</span>
+                <span class="legend-item"><span class="swatch" style="background: var(--rose);"></span>High</span>
+                <span class="legend-item"><span class="swatch" style="background: var(--amber);"></span>Medium</span>
+                <span class="legend-item"><span class="swatch" style="background: var(--blue);"></span>Low</span>
+                <span class="legend-item"><span class="swatch" style="background: rgba(255,255,255,0.3);"></span>Link</span>
               </div>
             </div>
             <div id="graph-shell">
-              <svg id="graph-svg" aria-label="CTI network graph"></svg>
+              <svg id="graph-svg" aria-label="fraud risk network graph"></svg>
               <div id="graph-tooltip"></div>
             </div>
           </section>
@@ -452,19 +630,19 @@
           <section class="panel">
             <div class="panel-head">
               <div>
-                <h2>Selected evidence</h2>
-                <small>SHAP waterfall, account summary, and relationship context.</small>
+                <h2>Forensic Intelligence</h2>
+                <small>SHAP attributes, community structures, and link correlation details.</small>
               </div>
             </div>
 
             <div style="display:grid; gap:12px;">
               <div id="account-summary" class="detail-grid"></div>
 
-              <div class="sidebar-card" style="padding:16px; background: rgba(255,255,255,0.03); box-shadow:none;">
-                <div class="panel-head" style="margin-bottom:12px;">
+              <div class="sidebar-card" style="padding:16px; background: rgba(255,255,255,0.015); box-shadow:none;">
+                <div class="panel-head" style="margin-bottom:10px;">
                   <div>
-                    <h3>SHAP waterfall</h3>
-                    <small>Positive values push CTI up, negative values pull it down.</small>
+                    <h3>SHAP Attribution Waterfall</h3>
+                    <small>Quantifiable feature contributions to the computed risk score.</small>
                   </div>
                 </div>
                 <div id="waterfall-shell">
@@ -473,14 +651,39 @@
                 <div id="plain-english" class="narrative" style="margin-top:12px;"></div>
               </div>
 
-              <div class="sidebar-card" style="padding:16px; background: rgba(255,255,255,0.03); box-shadow:none;">
-                <div class="panel-head" style="margin-bottom:12px;">
+              <div class="sidebar-card" style="padding:16px; background: rgba(255,255,255,0.015); box-shadow:none;">
+                <div class="panel-head" style="margin-bottom:10px;">
                   <div>
-                    <h3>Relationship detail</h3>
-                    <small>Click a graph edge to inspect the connection.</small>
+                    <h3>Structural Relationship Detail</h3>
+                    <small>Graph neighborhood metrics and link values.</small>
                   </div>
                 </div>
                 <div id="relationship-summary" class="detail-grid"></div>
+              </div>
+
+              <div class="sidebar-card" style="padding:16px; background: rgba(255,255,255,0.015); box-shadow:none;">
+                <div class="panel-head" style="margin-bottom:10px;">
+                  <div>
+                    <h3>Investigator Decision</h3>
+                    <small>Recommendation, signature matches, and case notes.</small>
+                  </div>
+                </div>
+                <div id="investigation-summary" class="detail-grid" style="margin-bottom:12px;"></div>
+                <div id="signature-match-list" class="narrative" style="margin-bottom:12px;"></div>
+                <div style="display:grid; gap:10px;">
+                  <textarea id="investigator-note-input" rows="4" placeholder="Add investigator note or next action"></textarea>
+                  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <input id="investigator-name-input" type="text" placeholder="Analyst name" style="border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; padding: 12px 14px; color: var(--text); background: rgba(255, 255, 255, 0.05); font-family: var(--font); font-size: 0.9rem;" />
+                    <select id="investigator-status-input">
+                      <option value="Open">Open</option>
+                      <option value="Watchlist">Watchlist</option>
+                      <option value="Escalated">Escalated</option>
+                      <option value="Cleared">Cleared</option>
+                    </select>
+                  </div>
+                  <button id="save-note">Save note</button>
+                </div>
+                <div id="notes-list" class="narrative" style="margin-top:12px;"></div>
               </div>
             </div>
           </section>

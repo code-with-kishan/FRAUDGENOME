@@ -1,4 +1,4 @@
-"""Prototype training script for MuleGuard AI.
+"""Prototype training script for FRAUDGENOME.
 
 This script loads `DataSet.csv`, trains LightGBM and XGBoost, computes a simple DTW
 FraudDNA score for anchor features, and saves models to `models/`.
