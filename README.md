@@ -6,9 +6,6 @@
 
 <div align="center">
 
-[![The Forge](https://img.shields.io/badge/PSB%20CyberShield-Hackathon%202026-blueviolet?style=for-the-badge&logo=shield&logoColor=white)](https://github.com/code-with-kishan/FRAUDGENOME)
-[![AI-powered real-time fraud and mule account detection.](https://img.shields.io/badge/Bank%20of%20India%20×%20IIT%20Hyderabad-PS--2-orange?style=for-the-badge)](https://github.com/code-with-kishan/FRAUDGENOME)
-[![Team Cyberx](https://img.shields.io/badge/Team-CyberCoders-success?style=for-the-badge&logo=users&logoColor=white)](https://github.com/code-with-kishan/FRAUDGENOME)
 [![Live Pipeline](https://img.shields.io/badge/Pipeline-Running%20✓-brightgreen?style=for-the-badge&logo=github-actions)](https://github.com/code-with-kishan/FRAUDGENOME)
 
 <br/>
